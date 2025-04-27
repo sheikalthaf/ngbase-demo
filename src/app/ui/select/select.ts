@@ -43,12 +43,12 @@ export class SelectOption<T> {}
       <!-- Prefix template -->
       <ng-content select=".select-prefix" />
 
-      <span class="flex-1 truncate" [class.text-muted]="!cValue()">
+      <span class="flex-1 truncate" [class.text-muted-foreground]="!cValue()">
         <ng-content select="[meeSelectTrigger]">
           {{ cValue() || placeholder() }}
         </ng-content>
       </span>
-      <mee-icon name="lucideChevronsUpDown" class="ml-0.5 text-muted" />
+      <mee-icon name="lucideChevronsUpDown" class="ml-0.5 text-muted-foreground" />
     </button>
 
     <!-- Options template -->
@@ -87,10 +87,13 @@ export class SelectOption<T> {}
     </ng-template>
   `,
   host: {
-    class: 'flex cursor-pointer font-medium outline-none',
+    class: 'flex cursor-pointer font-medium outline-none w-full',
     '[class.pointer-events-none]': 'disabled()',
   },
 })
 export class Select<T> extends NgbSelect<T> {
-  override sideOffset = 16;
+  override defaultOptions = {
+    sideOffset: 16,
+    offset1: 0,
+  };
 }

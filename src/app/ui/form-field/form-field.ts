@@ -26,9 +26,9 @@ import { NgbSelectTarget } from '@ngbase/adk/select';
     <ng-content select="[meeLabel]" />
     <ng-content select="[meeDescription]" />
     <div class="mt-1 flex items-center" #target meeInputStyle>
-      <ng-content select="[meeInputPrefix]" />
+      <ng-content select="[meePrefix]" />
       <ng-content />
-      <ng-content select="[meeInputSuffix]" />
+      <ng-content select="[meeSuffix]" />
     </div>
     <ng-content select="[meeError]" />
   `,
@@ -46,13 +46,13 @@ export class FormField {
 
 @Directive({
   selector: '[meeInput]',
-  hostDirectives: [{ directive: InputBase, inputs: ['value'] }],
+  hostDirectives: [{ directive: InputBase, inputs: ['value'], outputs: ['valueChange'] }],
   host: {
-    class: 'focus:outline-none',
+    class: 'outline-none w-full bg-transparent',
     '[class.border-red-500]': 'formField?.hasErrors()',
   },
 })
-export class Input<T = unknown> {
+export class Input {
   readonly formField = inject(NgbFormField, { optional: true });
 }
 
@@ -70,13 +70,13 @@ export class Label {}
 @Directive({
   selector: '[meeDescription]',
   host: {
-    class: 'text-sm text-muted',
+    class: 'text-sm text-muted-foreground',
   },
 })
 export class Description {}
 
 @Directive({
-  selector: '[meeInputPrefix]',
+  selector: '[meePrefix]',
   host: {
     class: 'mr-2.5',
   },
@@ -84,7 +84,7 @@ export class Description {}
 export class InputPrefix {}
 
 @Directive({
-  selector: '[meeInputSuffix]',
+  selector: '[meeSuffix]',
   host: {
     class: 'ml-2.5',
   },
