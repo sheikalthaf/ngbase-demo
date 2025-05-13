@@ -1,5 +1,11 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Directive } from '@angular/core';
+import {
+  booleanAttribute,
+  ChangeDetectionStrategy,
+  Component,
+  Directive,
+  input,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Icon } from '@/ui/icon';
 import { provideIcons } from '@ng-icons/core';
@@ -13,6 +19,7 @@ import {
 } from '@ngbase/adk/select';
 import { Option } from './option';
 import { SelectInput } from './select-input';
+import { PopoverOptions } from '@ngbase/adk/popover';
 
 @Directive({
   selector: '[meeSelectOption]',
@@ -48,7 +55,9 @@ export class SelectOption<T> {}
           {{ cValue() || placeholder() }}
         </ng-content>
       </span>
-      <mee-icon name="lucideChevronsUpDown" class="ml-0.5 text-muted-foreground" />
+      @if (!noIcon()) {
+        <mee-icon name="lucideChevronsUpDown" class="ml-0.5 text-muted-foreground" />
+      }
     </button>
 
     <!-- Options template -->
@@ -92,8 +101,8 @@ export class SelectOption<T> {}
   },
 })
 export class Select<T> extends NgbSelect<T> {
-  override defaultOptions = {
+  readonly noIcon = input(false, { transform: booleanAttribute });
+  override defaultOptions: Partial<PopoverOptions> = {
     sideOffset: 16,
-    offset1: 0,
   };
 }

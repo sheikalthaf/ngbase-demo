@@ -1,5 +1,17 @@
-import { ChangeDetectionStrategy, Component, Directive } from '@angular/core';
 import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  Directive,
+  inject,
+  input,
+} from '@angular/core';
+import {
+  aliasBodyRow,
+  aliasHeadRow,
+  aliasSort,
+  aliasSortHeader,
+  aliasTable,
   NgbBodyRow,
   NgbBodyRowDef,
   NgbCell,
@@ -9,26 +21,58 @@ import {
   NgbHeadDef,
   NgbHeadRow,
   NgbHeadRowDef,
+  NgbSort,
+  NgbSortHeader,
   NgbTable,
 } from '@ngbase/adk/table';
+import { Select, Option, SelectTrigger } from '@/ui/select';
+import { FormField, InputSuffix } from '@/ui/form-field';
+import { Icon } from '@/ui/icon';
+import { provideIcons } from '@ng-icons/core';
+import {
+  lucideArrowDown,
+  lucideArrowUp,
+  lucideArrowUpDown,
+  lucideChevronsUpDown,
+} from '@ng-icons/lucide';
+import { Button } from '@/ui/button';
+import { NgTemplateOutlet } from '@angular/common';
 
 @Component({
   selector: 'table[meeTable]',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [{ provide: NgbTable, useExisting: Table }],
+  providers: [aliasTable(Table)],
   template: `
     <thead>
       <ng-container #thead />
     </thead>
     <tbody>
       <ng-container #tbody />
+      @if (isEmpty()) {
+        <ng-content select="[meeEmptyState]" />
+      }
     </tbody>
   `,
   host: {
-    class: 'w-full text-sm',
+    class: 'w-full text-sm border-separate border-spacing-0',
   },
 })
-export class Table<T> extends NgbTable<T> {}
+export class Table<T> extends NgbTable<T> {
+  readonly isEmpty = computed(() => this.pluggedData().length === 0);
+}
+
+@Component({
+  selector: '[meeEmptyState]',
+  template: `<td class="h-24 p-2 text-center align-middle" [attr.colspan]="table.columns().length">
+    <ng-content />
+  </td>`,
+  host: {
+    class: 'border-b hover:bg-muted/50 data-[state=selected]:bg-muted',
+  },
+})
+export class EmptyState {
+  readonly table = inject(Table);
+}
 
 // Cell
 @Component({
@@ -61,10 +105,10 @@ export class BodyRowDef {}
 @Component({
   selector: '[meeBodyRow]',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [{ provide: NgbBodyRow, useExisting: BodyRow }],
+  providers: [aliasBodyRow(BodyRow)],
   template: `<ng-container #container />`,
   host: {
-    class: '[&:not(:last-child)]:border-b hover:bg-muted h-12',
+    class: '[&:not(:last-child)>td]:border-b hover:bg-muted h-12',
   },
 })
 export class BodyRow extends NgbBodyRow {}
@@ -79,14 +123,12 @@ export class Column {}
 
 // Head Cell
 
-@Component({
+@Directive({
   selector: '[meeHead]',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   hostDirectives: [NgbHead],
-  template: `<ng-content />`,
   host: {
     class:
-      'px-4 py-2 text-left align-middle font-medium text-muted-foreground border-b bg-background',
+      'px-4 py-2 text-left align-middle font-medium text-muted-foreground border-b bg-background [&[data-sticky]]:sticky [&[data-sticky]]:!z-20 [&[data-sticky="start"]]:left-0 [&[data-sticky="end"]]:right-0 [&[data-sticky="start"]]:border-r [&[data-sticky="end"]]:border-l',
   },
 })
 export class Head {}
@@ -102,10 +144,10 @@ export class HeadDef {}
 @Component({
   selector: '[meeHeadRow]',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [{ provide: NgbHeadRow, useExisting: HeadRow }],
+  providers: [aliasHeadRow(HeadRow)],
   template: `<ng-container #container />`,
   host: {
-    class: `h-10 [&[data-sticky=true]]:sticky [&[data-sticky=true]]:top-0 [&[data-sticky=true]]:bg-background`,
+    class: `h-10 [&[data-sticky]>th]:sticky [&[data-sticky]>th]:top-0 [&[data-sticky]>th]:bg-background [&[data-sticky]>th]:z-10`,
   },
 })
 export class HeadRow extends NgbHeadRow {}
@@ -120,3 +162,54 @@ export class HeadRow extends NgbHeadRow {}
   ],
 })
 export class HeadRowDef {}
+
+@Directive({
+  selector: '[meeSort]',
+  exportAs: 'meeSort',
+  providers: [aliasSort(Sort)],
+})
+export class Sort extends NgbSort<any> {
+  readonly mode = input<'selection' | 'toggle'>('toggle');
+}
+
+@Component({
+  selector: '[meeSortHeader]',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  viewProviders: [
+    provideIcons({ lucideChevronsUpDown, lucideArrowDown, lucideArrowUp, lucideArrowUpDown }),
+  ],
+  providers: [aliasSortHeader(SortHeader)],
+  imports: [Select, Option, SelectTrigger, FormField, InputSuffix, Icon, Button, NgTemplateOutlet],
+  template: `
+    <ng-template #temp><ng-content /></ng-template>
+    @if (sort.mode() === 'selection') {
+      <mee-form-field class="[&>.mis]:h-8 [&>.mis]:min-h-8 [&>.mis]:border-none">
+        <mee-select noIcon>
+          <div meeSelectTrigger class="text-xs"><ng-container *ngTemplateOutlet="temp" /></div>
+          <mee-option value="asc" (click)="setDirections('asc')">Asc</mee-option>
+          <mee-option value="desc" (click)="setDirections('desc')">Desc</mee-option>
+        </mee-select>
+        <mee-icon meeSuffix [name]="directionIcon()" class="!ml-0.5 text-muted-foreground" />
+      </mee-form-field>
+    } @else {
+      <button meeButton="ghost" class="h-8 gap-0.5 !px-2" (click)="toggle()">
+        <ng-container *ngTemplateOutlet="temp" />
+        <mee-icon [name]="directionIcon()" />
+      </button>
+    }
+  `,
+  host: {
+    class: '!py-1 !px-2',
+  },
+})
+export class SortHeader extends NgbSortHeader<Sort> {
+  readonly directionIcon = computed(() => {
+    return this.sortDirection() === 'asc'
+      ? 'lucideArrowDown'
+      : this.sortDirection() === 'desc'
+        ? 'lucideArrowUp'
+        : this.sort.mode() === 'selection'
+          ? 'lucideChevronsUpDown'
+          : 'lucideArrowUpDown';
+  });
+}
